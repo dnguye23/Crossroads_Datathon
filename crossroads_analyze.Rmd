@@ -166,9 +166,55 @@ glimpse(holidaylist)
 holidaylist$HolidayDate <- as.Date(holidaylist$HolidayDate , '%m/%d/%Y')
 glimpse(holidaylist)
 ```
+```{r}
 
+# Joining the tables
+
+df <- df_training %>%
+  inner_join(df_training_sup, by=c("BusinessDate"="BusinessDate","BranchID"="BranchID"))
+
+glimpse(df)
+```
+
+```{r}
+
+# Creating a subset of data that belongs to the holidays
+
+df_hols <- df %>%
+  inner_join(holidaylist, by=c("BusinessDate"="HolidayDate"))
+
+glimpse(df_hols)
+
+```
 
 
 
 # EXPLORATORY DATA ANALYSIS
+
+```{r}
+#create time series plot
+p <- ggplot(df, aes(x=BusinessDate, y=TotalCashUsed)) +
+       geom_line()
+
+#display time series plot
+p
+```
+```{r}
+#create time series plot - Monthly
+
+
+p <- ggplot(df, aes(x=month(BusinessDate), y=TotalCashUsed)) +
+       geom_line()
+
+#display time series plot
+p
+```
+
+
+
+```{r}
+# Create a monthly plot
+
+
+```
 
