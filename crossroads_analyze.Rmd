@@ -25,6 +25,8 @@ When you click the **Knit** button a document will be generated that includes bo
 library(tidyverse)
 library(ggplot2)
 library(plotly)
+library(lubridate)
+library(magrittr)
 ```
 ```{r}
 # Set path and read the files
@@ -39,14 +41,10 @@ df_training_sup <- read_csv('Training_SupplementalFields.csv')
 ```
 ### CLEANING UP THE DATA
 
-```{r}
-# Check the str of the files
 
-str(df_training)
-```
 
 ```{r}
-# Change - to 0
+# Change - to 0s
 
 df_training$CashOrdersReceived <- ifelse(df_training$CashOrdersReceived=='-',0, df_training$CashOrdersReceived)
 df_training$CashBalance_StartOfDay <- ifelse(df_training$CashBalance_StartOfDay=='-',0, df_training$CashBalance_StartOfDay)
@@ -55,13 +53,44 @@ df_training$TotalCashUsed <- ifelse(df_training$TotalCashUsed=='-',0, df_trainin
 glimpse(df_training)
 ```
 
+
+
 ```{r}
-# Change the character field to numeric
+
+# Changing character to numeric
+
+
+df_training$TotalCashUsed %<>%
+  gsub(",","",.) %>%
+  gsub("\\(","-",.) %>%
+  gsub("\\)","",.)
+
+df_training$CashOrdersReceived %<>%
+  gsub(",","",.) %>%
+  gsub("\\(","-",.) %>%
+  gsub("\\)","",.)
+
+df_training$BusinessDate <- as.Date(df_training$BusinessDate, '%m/%d/%Y')
+df_training$TotalCashUsed <- as.numeric(df_training$TotalCashUsed)
+df_training$CashOrdersReceived <- as.numeric(df_training$CashOrdersReceived)
+df_training$BranchID <- as.factor(df_training$BranchID)
+
+glimpse(df_training)
+
+
 
 
 ```
+```{r}
+summary(df_training)
+```
 
+```{r}
+# nrow and ncol
 
+nrow(df_training)
+ncol(df_training)
+```
 
 
 # EXPLORATORY DATA ANALYSIS
