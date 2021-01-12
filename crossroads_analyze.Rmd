@@ -91,6 +91,83 @@ summary(df_training)
 nrow(df_training)
 ncol(df_training)
 ```
+```{r}
+# Cleanup df_training_sup
+
+glimpse(df_training_sup)
+```
+```{r}
+# Change - to 0s
+
+df_training_sup$CashToVault <- ifelse(df_training_sup$CashToVault=='-',0, df_training_sup$CashToVault)
+df_training_sup$CashUnder <- ifelse(df_training_sup$CashUnder=='-',0, df_training_sup$CashUnder)
+df_training_sup$CashOver <- ifelse(df_training_sup$CashOver=='-',0, df_training_sup$CashOver)
+df_training_sup$TotalCashDisbursed <- ifelse(df_training_sup$TotalCashDisbursed=='-',0, df_training_sup$TotalCashDisbursed)
+df_training_sup$TotalCashOpeningBalance <- ifelse(df_training_sup$TotalCashOpeningBalance=='-',0, df_training_sup$TotalCashOpeningBalance)
+df_training_sup$TotalCashReceivedAllSources <- ifelse(df_training_sup$TotalCashReceivedAllSources=='-',0, df_training_sup$TotalCashReceivedAllSources)
+
+glimpse(df_training_sup)
+```
+
+```{r}
+# Changing character to numeric
+
+
+df_training_sup$CashToVault %<>%
+  gsub(",","",.) %>%
+  gsub("\\(","-",.) %>%
+  gsub("\\)","",.)
+
+df_training_sup$CashUnder %<>%
+  gsub(",","",.) %>%
+  gsub("\\(","-",.) %>%
+  gsub("\\)","",.)
+
+df_training_sup$CashOver %<>%
+  gsub(",","",.) %>%
+  gsub("\\(","-",.) %>%
+  gsub("\\)","",.)
+
+df_training_sup$TotalCashDisbursed %<>%
+  gsub(",","",.) %>%
+  gsub("\\(","-",.) %>%
+  gsub("\\)","",.)
+
+df_training_sup$TotalCashOpeningBalance %<>%
+  gsub(",","",.) %>%
+  gsub("\\(","-",.) %>%
+  gsub("\\)","",.)
+df_training_sup$TotalCashReceivedAllSources %<>%
+  gsub(",","",.) %>%
+  gsub("\\(","-",.) %>%
+  gsub("\\)","",.)
+
+
+df_training_sup$BusinessDate <- as.Date(df_training$BusinessDate, '%m/%d/%Y')
+df_training_sup$CashToVault <- as.numeric(df_training_sup$CashToVault)
+df_training_sup$CashUnder <- as.numeric(df_training_sup$CashUnder)
+df_training_sup$CashOver <- as.numeric(df_training_sup$CashOver)
+df_training_sup$TotalCashDisbursed <- as.numeric(df_training_sup$TotalCashDisbursed)
+df_training_sup$TotalCashReceivedAllSources <- as.numeric(df_training_sup$TotalCashReceivedAllSources)
+df_training_sup$BranchID <- as.factor(df_training$BranchID)
+
+glimpse(df_training_sup)
+```
+
+```{r}
+# Cleaning up holiday list
+
+glimpse(holidaylist)
+```
+
+```{r}
+# Change chr to date
+
+holidaylist$HolidayDate <- as.Date(holidaylist$HolidayDate , '%m/%d/%Y')
+glimpse(holidaylist)
+```
+
+
 
 
 # EXPLORATORY DATA ANALYSIS
