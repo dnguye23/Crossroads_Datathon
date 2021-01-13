@@ -183,10 +183,21 @@ glimpse(df)
 df_hols <- df %>%
   inner_join(holidaylist, by=c("BusinessDate"="HolidayDate"))
 
+df_hols <- df_hols %>%
+  select(1:11)
+
 glimpse(df_hols)
 
 ```
 
+```{r}
+
+# Dataframe without holidays
+
+df_without_hols <- setdiff(df, df_hols)
+
+glimpse(df_without_hols)
+```
 
 
 # EXPLORATORY DATA ANALYSIS
@@ -202,12 +213,27 @@ p
 ```{r}
 #create time series plot - Monthly
 
+df1 <- df %>%
+  group_by(BusinessDate, BranchID) %>%
+  summarize(meanTotalCash = mean(TotalCashUsed))
 
-p <- ggplot(df, aes(x=month(BusinessDate), y=TotalCashUsed)) +
+p <- ggplot(df1, aes(x=month(BusinessDate), y=meanTotalCash)) +
        geom_line()
 
 #display time series plot
 p
+```
+### FORECASTING
+
+```{r}
+library(forecast)
+library(MLmetrics)
+data=df
+
+```
+
+```{r}
+length(unique(df$BranchID))
 ```
 
 
