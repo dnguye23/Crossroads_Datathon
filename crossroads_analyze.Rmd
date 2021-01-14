@@ -27,7 +27,12 @@ library(ggplot2)
 library(plotly)
 library(lubridate)
 library(magrittr)
+library(scales)
+library(reshape2)
+library(prophet)
+library(MASS)
 ```
+
 ```{r}
 # Set path and read the files
 
@@ -198,49 +203,175 @@ df_without_hols <- setdiff(df, df_hols)
 
 glimpse(df_without_hols)
 ```
+### Saving the CSV
+
+```{r}
+write.csv(df,"C:/Users/as8126/Ankur/MSDS/kaggle_crossroads/kaggle.csv")
+```
 
 
 # EXPLORATORY DATA ANALYSIS
 
 ```{r}
-#create time series plot
-p <- ggplot(df, aes(x=BusinessDate, y=TotalCashUsed)) +
-       geom_line()
-
-#display time series plot
-p
+summary(df)
 ```
+```{r}
+# Checking the totalCashUsed for less than 0 and more than 100K 
+
+df_s <- df %>% filter(TotalCashUsed <=-100000 | TotalCashUsed >=500000) %>%
+  arrange(desc(TotalCashUsed))
+
+nrow(df_s)
+```
+```{r}
+head(df_s)
+```
+
+```{r}
+# Creating a dataset with only BranchID, totalCashUsed and Date.
+
+df_sub <- df %>%
+  select(BusinessDate, BranchID, TotalCashUsed)
+```
+
+```{r}
+glimpse(df_sub)
+```
+
+```{r}
+# Convert to date format
+
+df_sub$BusinessDate <- as.Date(df_sub$BusinessDate)
+
+glimpse(df_sub)
+```
+
+
+```{r}
+# Creating a wide format on the BranchID
+
+df_sub <- dcast(BusinessDate ~ BranchID, data=df_sub)
+
+head(df_sub)
+```
+```{r}
+# Convert to Time series
+
+df_time <- ts(data=df_sub[,-1], start=min(df_sub$BusinessDate), end=max(df_sub$BusinessDate))
+
+```
+
+```{r}
+class(df_time)
+```
+
+
+```{r}
+head(df_time)
+```
+
+```{r}
+# Create a plot
+
+library(xts)
+
+plot(as.xts(df_time), major.format="%Y")
+
+#plot(df_time, plot.type="single", col=1:10, major.format="%Y")
+#legend("topleft", legend=colnames(df_time), ncol=2, lty=1, col=1:10, cex=.9)
+```
+
+
+```{r}
+# Creating a time series plot for TotalCashUsed
+
+ggplot(df, aes(x=BusinessDate))+
+  geom_line(aes(y=TotalCashUsed), color = "#00AFBB")+
+labs(y="Total Cash Used", x="Year")+
+  ggtitle("Total Cash Used over the years")+
+  scale_x_date(breaks=date_breaks("1 year"), labels=date_format("20%y"))
+ 
+```
+
+```{r}
+# Monthly Time plot series
+
+df_time_month <- df %>%
+  group_by(month(BusinessDate)) %>%
+  summarize(meanTotalCash = mean(TotalCashUsed))
+
+glimpse(df_time_month)
+```
+
+```{r}
+unique(df_time_month$`month(BusinessDate)`)
+```
+
+
+
 ```{r}
 #create time series plot - Monthly
 
-df1 <- df %>%
-  group_by(BusinessDate, BranchID) %>%
-  summarize(meanTotalCash = mean(TotalCashUsed))
 
-p <- ggplot(df1, aes(x=month(BusinessDate), y=meanTotalCash)) +
+
+p <- ggplot(df_time_month, aes(x=df_time_month$`month(BusinessDate)`, y=meanTotalCash)) +
        geom_line()
 
 #display time series plot
 p
 ```
-### FORECASTING
+### FORECASTING using Prophet
 
 ```{r}
-library(forecast)
-library(MLmetrics)
-data=df
+# Create a forecasting dataframe
 
+y <- as.integer(df$TotalCashUsed)
+y <- as.numeric(y)
+ds <- ymd(df$BusinessDate)
+branchid <- df$BranchID
+
+m <- data.frame(ds,y, branchid)
+
+glimpse(m)
 ```
 
 ```{r}
-length(unique(df$BranchID))
+# Create a new prophet object
+
+forecast_m <- prophet(m, yearly.seasonality = TRUE, daily.seasonality = TRUE)
+
+forecast_m
 ```
 
+```{r}
+# Make future predictions
+
+future <- make_future_dataframe(forecast_m, periods=122)
+
+forecast <- predict(forecast_m, future)
+
+tail(forecast[c('ds','yhat','yhat_lower','yhat_upper')])
+```
 
 
 ```{r}
-# Create a monthly plot
+
+plot(forecast_m, forecast)
+```
+```{r}
+prophet_plot_components(forecast_m, forecast)
+```
+
+```{r}
+# Saving the predict file 
 
 
 ```
+
+
+# Set the training data on Covid time frame
+
+# Forecasting
+
+# Lets take a subset of data for one of the branch to do a forecasting
 
