@@ -1,0 +1,584 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.9.1
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+# Time Series Predict (_Split_Branches_) from a train as before 2020-07-31
+
+By Vivian Zeng
+
+U of Notre Dame
+
+```{python}
+import pandas as pd
+```
+
+# Get the Data
+
+```{python}
+# %matplotlib inline
+
+kaggle = pd.read_csv("kaggle.csv")
+kaggle.head()
+```
+
+```{python}
+kaggle=kaggle.drop(kaggle.columns[0], axis=1)
+kaggle.head()
+```
+
+```{python}
+kaggle.info()
+```
+
+```{python active="", eval=FALSE}
+171229 days 
+```
+
+```{python}
+# Convert date to a datetime object
+kaggle.BusinessDate = pd.to_datetime(kaggle.BusinessDate)
+kaggle.head()
+```
+
+```{python}
+kaggle[['BusinessDate']].info()
+```
+
+```{python}
+# Set date to be index
+kaggle.set_index('BusinessDate', inplace = True)
+kaggle.index
+```
+
+```{python}
+kaggle.head()
+```
+
+```{python}
+# Plot the some cash columns
+# %matplotlib inline
+kaggle[['CashOrdersReceived', 
+         'TotalCashUsed', 
+         'TotalCashDisbursed']].plot(rot = 45, 
+                                figsize = (15, 10), 
+                                marker = ".", 
+                                alpha = 0.4,
+                                title = "Cash")
+```
+
+```{python}
+# Some verage monthly cash columns
+#kaggle.resample('M').agg({'TotalCashUsed':'mean'}).plot(figsize = (10,8))
+```
+
+```{python}
+# Average CashOrdersReceived based on year
+#kaggle.resample('Y').agg({'TotalCashUsed':'mean'}).plot(figsize = (10,8))
+```
+
+```{python}
+# Average CashOrdersReceived based on month
+#kaggle.resample('M').agg({'TotalCashUsed':'mean'}).plot(figsize = (10,8))
+```
+
+```{python}
+# Average CashOrdersReceived based on quarter
+#kaggle.resample('3M').agg({'TotalCashUsed':'mean'}).plot(figsize = (10,8))
+```
+
+# Setup train datasets
+
+```{python}
+kaggle.head(2)
+```
+
+# Set train based on the entire dataframe
+
+```{python}
+# Extract data from '2010-01-01' to '2020-07-31' as train
+train=kaggle.loc['2010-01-01':'2020-07-31']
+```
+
+```{python}
+train.head(2)
+```
+
+```{python}
+# Reset the index to bring date in as column
+train.reset_index(inplace = True)
+train.head(2)
+```
+
+```{python}
+print (train.BusinessDate.min())
+print (train.BusinessDate.max())
+```
+
+```{python}
+# Extract only the variables of interest
+train = train[['BusinessDate', 'BranchID','TotalCashUsed']]
+train.head()
+```
+
+```{python}
+# Rename the columns as necessary
+train.rename({'BusinessDate': 'ds', 'TotalCashUsed':'y'}, 
+             axis = 'columns',
+             inplace = True)
+train.head()
+```
+
+```{python}
+# Import Prophet
+from fbprophet import Prophet
+import plotly
+
+# Create a new Prophet object
+model = Prophet(yearly_seasonality=True, daily_seasonality=True)
+print(model)
+
+# Fit the model to the historical data
+model.fit(train)
+```
+
+```{python}
+# Create DataFrame with future dates to predict at (08-01-2020 to 11-30-2020, 122 days in total)
+future = model.make_future_dataframe(periods=122)
+future.tail()
+```
+
+```{python}
+# Make predictions for next 122 days
+#forecast = model.predict(future)
+#forecast.head()
+```
+
+ds - the timestamps
+
+yhat - the predictions
+
+yhat_lower - the lower bound of the prediction interval
+
+yhat_upper - the upper bound of the prediction interval
+
+```{python}
+# Extract the desired components
+#forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail()
+```
+
+```{python}
+# Plot the model fit and predictions
+# forecast_plot = model.plot(forecast, 
+                           # xlabel = 'Time', 
+                           # ylabel = 'Cash')
+```
+
+```{python}
+#forecast['weekday_name'] = forecast['ds'].dt.day_name()
+#forecast.head()
+```
+
+```{python}
+# Decompose the time-series into Seasonal and Non-Seasonal components
+#components_plot = model.plot_components(forecast)
+```
+
+## Set train based on Covid time frame
+
+```{python}
+# Extract data from '2020-01-01' to '2020-07-31' as train
+train_covid=kaggle.loc['2020-01-01':'2020-07-31']
+```
+
+```{python}
+# Reset the index to bring date in as column
+train_covid.reset_index(inplace = True)
+train_covid.head()
+```
+
+```{python}
+print (train_covid.BusinessDate.min())
+print (train_covid.BusinessDate.max())
+```
+
+```{python}
+# Extract only the variables of interest
+train_covid = train_covid[['BusinessDate', 'BranchID','TotalCashUsed']]
+train_covid.head()
+# Rename the columns as necessary
+train_covid.rename({'BusinessDate': 'ds', 'TotalCashUsed':'y'}, 
+             axis = 'columns',
+             inplace = True)
+train_covid.head()
+```
+
+```{python}
+print (train_covid.ds.min())
+print (train_covid.ds.max())
+```
+
+```{python}
+#from fbprophet import Prophet
+#import plotly
+
+# Create a new Prophet object
+model_covid = Prophet(yearly_seasonality=True, daily_seasonality=True)
+print(model_covid)
+
+# Fit the model to the historical data
+model_covid.fit(train_covid)
+```
+
+```{python}
+future_covid = model_covid.make_future_dataframe(periods=122)
+future_covid.tail(2)
+```
+
+```{python}
+# Make predictions for next 122 days
+#forecast_covid = model_covid.predict(future_covid)
+#forecast_covid.head()
+```
+
+```{python}
+#print (forecast_covid.ds.min())
+#print (forecast_covid.ds.max())
+# Extract the desired components
+# forecast_covid[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail()
+```
+
+```{python}
+# Extract the desired components
+# forecast_covid[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail()
+```
+
+```{python}
+# Plot the model fit and predictions
+#forecast_covid_plot = model_covid.plot(forecast_covid, 
+                                       #xlabel = 'Time', 
+                                       #ylabel = 'Cash')
+```
+
+## Compare the predicts based on train and train_covid
+
+```{python}
+# Plot the some cash columns
+# #%matplotlib inline
+#forecast.tail(300).yhat.plot(rot = 45, 
+                                #figsize = (15, 10), 
+                                #marker = ".", 
+                                #alpha = 0.4,
+                                #title = "Cash based on All")
+```
+
+```{python}
+# Plot the some cash columns
+# # %matplotlib inline
+#forecast_covid.tail(300).yhat.plot(rot = 45, 
+                                #figsize = (15, 10), 
+                                #marker = ".", 
+                                #alpha = 0.4,
+                                #title = "Cash based on Covid")
+```
+
+# Dig into EDA for data during covid time frame
+
+```{python}
+#covid=kaggle.loc['2020-01-01':'2020-07-31']
+```
+
+```{python}
+#kaggle.head()
+```
+
+```{python}
+#covid.head()
+```
+
+```{python}
+# Plot the some cash columns
+# #%matplotlib inline
+#covid[['TotalCashUsed']].plot(rot = 45, 
+                                #figsize = (15, 10), 
+                                #marker = ".", 
+                                #alpha = 0.4,
+                                #title = "Cash")
+```
+
+```{python}
+# Some average monthly cash columns
+#covid.resample('M').agg({'TotalCashUsed':'mean'}).plot(figsize = (10,8))
+```
+
+```{python}
+# Some average weekly cash columns
+#covid.resample('W').agg({'TotalCashUsed':'mean'}).plot(figsize = (10,8))
+```
+
+```{python}
+# Some average 3d cash columns
+#covid.resample('3d').agg({'TotalCashUsed':'mean'}).plot(figsize = (10,8))
+```
+
+# EDA for mixed pure covid and nomal train data
+
+```{python}
+normal_covid=kaggle.loc['2019-01-01':'2020-07-31']
+```
+
+```{python}
+# Some average 3d cash columns
+#normal_covid.resample('3d').agg({'TotalCashUsed':'mean'}).plot(figsize = (10,8))
+```
+
+```{python}
+# Some average week cash columns
+#normal_covid.resample('w').agg({'TotalCashUsed':'mean'}).plot(figsize = (10,8))
+```
+
+```{python}
+# Plot the some cash columns
+# #%matplotlib inline
+#normal_covid[['TotalCashUsed']].plot(rot = 45, 
+                                #figsize = (15, 10), 
+                                #marker = ".", 
+                                #alpha = 0.4,
+                                #title = "Cash")
+```
+
+# Predict based on mixed train based on normal and covid train
+
+```{python}
+# Reset the index to bring date in as column
+normal_covid.reset_index(inplace = True)
+normal_covid.head()
+# Extract only the variables of interest
+normal_covid_train = normal_covid[['BusinessDate', 'BranchID','TotalCashUsed']]
+normal_covid_train.head()
+```
+
+```{python}
+# Rename the columns as necessary
+normal_covid_train.rename({'BusinessDate': 'ds', 'TotalCashUsed':'y'}, 
+             axis = 'columns',
+             inplace = True)
+normal_covid_train.head()
+```
+
+```{python}
+# Create a new Prophet object
+model_nc = Prophet(yearly_seasonality=True, daily_seasonality=True)
+print(model_nc)
+
+# Fit the model to the historical data
+model_nc.fit(normal_covid_train)
+```
+
+```{python}
+# Create DataFrame with future dates to predict at (08-01-2020 to 11-30-2020, 122 days in total)
+future_nc = model_nc.make_future_dataframe(periods=122)
+future_nc.tail(2)
+```
+
+```{python}
+# Make predictions for next 122 days
+#forecast_nc = model_nc.predict(future_nc)
+#forecast_nc.head()
+```
+
+```{python}
+# Plot the model fit and predictions
+#forecast_plot = model_nc.plot(forecast_nc, 
+                           #xlabel = 'Time', 
+                           #ylabel = 'Cash')
+```
+
+```{python}
+# Plot the some cash columns
+# #%matplotlib inline
+#forecast_nc.tail(300).yhat.plot(rot = 45, 
+                                #figsize = (15, 10), 
+                                #marker = ".", 
+                                #alpha = 0.4,
+                                #title = "Cash based on mixture of covid and normal")
+```
+
+```{python}
+# Plot the some cash columns
+# #%matplotlib inline
+#forecast.tail(300).yhat.plot(rot = 45, 
+                                #figsize = (15, 10), 
+                                #marker = ".", 
+                                #alpha = 0.4,
+                                #title = "Cash based on All")
+```
+
+```{python}
+#forecast.yhat.describe()
+```
+
+```{python}
+#forecast_nc.yhat.describe()
+```
+
+# Forcasting based on BranchID
+
+
+## Train based on entire time frame
+
+```{python}
+df = train.groupby('BranchID').filter(lambda x: len(x) > 2)
+
+df.BranchID = df.BranchID.astype(str)
+
+final = pd.DataFrame(columns=['BranchID','ds','yhat'])
+
+grouped = df.groupby('BranchID')
+for g in grouped.groups:
+    group = grouped.get_group(g)
+    m = Prophet(yearly_seasonality=True, daily_seasonality=True)
+    m.fit(group)
+    future = m.make_future_dataframe(periods=122)
+    forecast = m.predict(future)
+    #I added a column with BranchID id
+    forecast['BranchID'] = g
+    #I used concat instead of merge
+    final = pd.concat([final, forecast], ignore_index=True)
+
+final.head(10)
+```
+
+```{python}
+print (final.ds.min())
+print (final.ds.max())
+```
+
+```{python}
+final.shape
+```
+
+```{python}
+final['future']=0
+final.head()
+```
+
+```{python}
+final.iloc[-122:,].future=1
+```
+
+```{python}
+#Extract the desired components
+final[['BranchID', 'ds', 'yhat', 'yhat_lower', 'yhat_upper', 'future']].tail()
+```
+
+```{python}
+len(final.BranchID.unique())
+```
+
+```{python}
+forecast_plot = model.plot(final,
+                           xlabel = 'Time', 
+                           ylabel = 'Cash')
+```
+
+```{python}
+# %matplotlib inline
+final.tail(300).yhat.plot(rot = 45, 
+                          figsize = (15, 10),
+                          marker = ".",
+                          alpha = 0.4,
+                          title = "Cash based on All")
+```
+
+```{python}
+from matplotlib import pyplot as plt
+```
+
+```{python}
+#fig = plt.figure(figsize=(15,10))
+#fig.set_dpi(300)
+
+#present_data = final.loc[final['future'] == 0]
+#future_data = final.loc[final['future'] == 1]
+
+#present_data.groupby('BranchID')['yhat'].plot(legend='True')
+#future_data.groupby('BranchID')['yhat'].plot(style='--')
+
+#plt.legend(loc='center left', ncol=5, bbox_to_anchor=(1, 0.5), fancybox=True)
+#plt.show()
+```
+
+```{python}
+fig, ax = plt.subplots(figsize=(15,15))
+plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
+for key, data in final.groupby('BranchID'):
+    data.plot(x='ds', y='yhat', ax=ax, label=key)
+    
+```
+
+```{python}
+final.groupby('BranchID').yhat.describe()
+```
+
+```{python}
+#pip install jupytext --upgrade
+```
+
+```{python}
+#####
+```
+
+```{python}
+final.to_csv('kaggle_ver1', index=False)
+```
+
+```{python}
+final.shape
+```
+
+```{python}
+177208-171230
+```
+
+```{python}
+output = final[['ds', 'BranchID','yhat']]
+```
+
+```{python}
+output.head()
+```
+
+```{python}
+output=output.tail(122*49)
+```
+
+```{python}
+output.head()
+```
+
+```{python}
+#output.head()
+```
+
+```{python}
+output['Date_Branch'] = output[['yhat', 'BranchID']].agg('-'.join, axis=1)
+```
+
+```{python}
+output.head()
+```
+
+```{python}
+
+```
